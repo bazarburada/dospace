@@ -15,13 +15,13 @@ enum Permissions {
 }
 
 class Bucket extends Client {
-  Bucket(
-      {@required String region,
-      @required String accessKey,
-      @required String secretKey,
-      String endpointUrl,
-      http.Client httpClient})
-      : super(
+  Bucket({
+    required String region,
+    required String accessKey,
+    required String secretKey,
+    String? endpointUrl,
+    http.Client? httpClient,
+  }) : super(
             region: region,
             accessKey: accessKey,
             secretKey: secretKey,
@@ -41,10 +41,13 @@ class Bucket extends Client {
 
   /// List the Bucket's Contents.
   /// https://developers.digitalocean.com/documentation/spaces/#list-bucket-contents
-  Stream<BucketContent> listContents(
-      {String delimiter, String prefix, int maxKeys}) async* {
-    bool isTruncated;
-    String marker;
+  Stream<BucketContent> listContents({
+    String? delimiter,
+    String? prefix,
+    int? maxKeys,
+  }) async* {
+    bool isTruncated = true;
+    String? marker;
     do {
       Uri uri = Uri.parse(endpointUrl + '/');
       Map<String, dynamic> params = new Map<String, dynamic>();
@@ -70,10 +73,10 @@ class Bucket extends Client {
                     ele.text.toLowerCase() != "false" && ele.text != "0";
                 break;
               case "Contents":
-                String key;
-                DateTime lastModifiedUtc;
-                String eTag;
-                int size;
+                late String key;
+                late DateTime lastModifiedUtc;
+                late String eTag;
+                late int size;
                 for (xml.XmlNode node in ele.children) {
                   if (node is xml.XmlElement) {
                     xml.XmlElement ele = node;
@@ -109,8 +112,12 @@ class Bucket extends Client {
 
   /// Uploads file. Returns Etag.
   Future<String> uploadFile(
-      String key, dynamic file, String contentType, Permissions permissions,
-      {Map<String, String> meta}) async {
+    String key,
+    dynamic file,
+    String contentType,
+    Permissions permissions, {
+    Map<String, String>? meta,
+  }) async {
     int contentLength = await file.length();
     Digest contentSha256 = await sha256.bind(file.openRead()).first;
     String uriStr = endpointUrl + '/' + key;
@@ -136,14 +143,19 @@ class Bucket extends Client {
       throw new ClientException(
           response.statusCode, response.reasonPhrase, response.headers, body);
     }
-    String etag = response.headers['etag'];
+    String etag = response.headers['etag']!;
     return etag;
   }
 
   /// Uploads data from memory. Returns Etag.
   Future<String> uploadData(
-      String key, Uint8List data, String contentType, Permissions permissions,
-      {Map<String, String> meta, Digest contentSha256}) async {
+    String key,
+    Uint8List data,
+    String contentType,
+    Permissions permissions, {
+    Map<String, String>? meta,
+    Digest? contentSha256,
+  }) async {
     int contentLength = await data.length;
     Digest contentSha256_ =
         contentSha256 != null ? contentSha256 : await sha256.convert(data);
@@ -168,17 +180,19 @@ class Bucket extends Client {
       throw new ClientException(
           response.statusCode, response.reasonPhrase, response.headers, body);
     }
-    String etag = response.headers['etag'];
+    String etag = response.headers['etag']!;
     return etag;
   }
 
-  String preSignUpload(String key,
-      {int contentLength,
-      String contentType,
-      Digest contentSha256,
-      Permissions permissions = Permissions.private,
-      int expires = 900,
-      Map<String, String> meta}) {
+  String? preSignUpload(
+    String key, {
+    int? contentLength,
+    String? contentType,
+    Digest? contentSha256,
+    Permissions permissions = Permissions.private,
+    int expires = 900,
+    Map<String, String>? meta,
+  }) {
     String uriStr = endpointUrl + '/' + key;
     Uri uriBase = Uri.parse(uriStr);
     Map<String, String> queryParameters = new Map<String, String>();
@@ -198,7 +212,11 @@ class Bucket extends Client {
     if (permissions == Permissions.public) {
       request.headers['x-amz-acl'] = 'public-read';
     }
-    return signRequest(request,
-        contentSha256: contentSha256, expires: expires, preSignedUrl: true);
+    return signRequest(
+      request,
+      contentSha256: contentSha256,
+      expires: expires,
+      preSignedUrl: true,
+    );
   }
 }
