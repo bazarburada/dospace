@@ -39,7 +39,7 @@ class Client {
         this.httpClient = httpClient ?? new http.Client() {}
 
   Future<void> close() async {
-    await httpClient.close();
+    await Future(() => httpClient.close());
   }
 
   @protected
