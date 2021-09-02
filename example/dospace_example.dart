@@ -59,7 +59,7 @@ main() async {
     String body = await utf8.decodeStream(httpResponse.stream);
     print('${httpResponse.statusCode} ${httpResponse.reasonPhrase}');
     print(body);
-    await httpClient.close();
+    httpClient.close();
   }
 
   print('done');
